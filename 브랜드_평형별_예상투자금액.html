@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>브랜드별 평형별 예상 투자금액</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1d2330;--sub:#6b7385;--line:#e3e6ec;--accent:#2f5bea;--accent-bg:#eaf0ff;--danger:#d64545;--ok:#1f8a4c;--off:#b7bcc8}
+@media (prefers-color-scheme:dark){:root{--bg:#14171d;--card:#1d222b;--ink:#e8ebf2;--sub:#98a1b3;--line:#2d3440;--accent:#7b9bff;--accent-bg:#27325a;--danger:#ff7a7a;--ok:#5fd18a;--off:#566074}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard","Malgun Gothic",system-ui,sans-serif;line-height:1.5}
+.wrap{max-width:1180px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:22px;margin:0 0 4px}
+.desc{color:var(--sub);font-size:13px;margin:0 0 18px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.tab{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:999px;font-size:14px;cursor:pointer}
+.tab.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;overflow-x:auto}
+.bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.bar h2{font-size:17px;margin:0}
+.chip{display:inline-block;background:var(--accent-bg);color:var(--accent);font-size:12px;padding:2px 8px;border-radius:999px;margin-left:6px}
+button.reset{border:1px solid var(--line);background:transparent;color:var(--ink);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+button.reset:hover{border-color:var(--accent);color:var(--accent)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:14px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+thead th{background:var(--accent-bg);font-weight:600;position:sticky;top:0}
+td.note,th.note{text-align:left;color:var(--sub);font-size:12px;white-space:normal;min-width:130px}
+tr.off td{color:var(--off);text-decoration:line-through}
+tr.off td:first-child,tr.off td.note,tr.off td.x{text-decoration:none}
+tr.off td:first-child{color:var(--off)}
+td.x{text-align:center;width:44px}
+.xbtn{border:1px solid var(--line);background:transparent;color:var(--danger);width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:14px;line-height:1}
+.xbtn:hover{background:var(--danger);color:#fff}
+tr.off .xbtn{color:var(--ok)}
+tr.off .xbtn:hover{background:var(--ok);color:#fff}
+tr.sum td{font-weight:700;background:var(--accent-bg);border-top:2px solid var(--accent);font-size:15px}
+tr.chk td{font-size:12px;color:var(--sub)}
+.good{color:var(--ok);font-weight:600}
+.bad{color:var(--danger);font-weight:600}
+.foot{margin-top:12px;font-size:12px;color:var(--sub)}
+.foot p{margin:3px 0}
+.cmp{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:14px}
+.cmp .card{padding:14px}
+.cmp h3{margin:0 0 8px;font-size:15px}
+.cmp table{min-width:0;font-size:13px}
+.unit{font-size:12px;color:var(--sub)}
+@media(max-width:600px){h1{font-size:19px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>브랜드별 평형별 예상 투자금액</h1>
+  <p class="desc">2026 평형별 예상 개설내역서(맞춤) 기준 · 단위: 만원 · 항목 오른쪽 <b>조건 변경(✕)</b>을 누르면 해당 비용이 제외되고 합계가 즉시 다시 계산됩니다. (↺ 로 복원)</p>
+  <div class="tabs" id="tabs"></div>
+  <div id="view"></div>
+</div>
+
+<script>
+// 단위: 만원
+const ITEMS=[
+ ["fee","가맹비"],["edu","교육비"],["dep","계약이행보증금"],["int","인테리어"],
+ ["sign","간판"],["kit","주방"],["hq","본사초도"],["etc","기타 비용"]
+];
+const BRANDS=[
+ {id:"BD",name:"빨강다람쥐",roy:"로열티 1.1%",py:[20,30,40,50,60,70,80],
+  fee:[0,0,0,0,0,0,0],edu:[300,300,300,300,300,300,300],dep:[100,100,100,100,100,100,100],int:[2000,2700,3600,4500,5400,6300,7200],
+  sign:[750,900,1050,1200,1250,1300,1400],kit:[600,750,1100,1300,1600,1900,2300],hq:[120,140,180,210,260,290,320],etc:[200,230,240,250,260,300,310],
+  tot:[4070,5120,6570,7860,9170,10490,11930]},
+ {id:"CT",name:"천통",roy:"로열티 3.3% (30호점까지 1.1%)",py:[20,30,40,50,60,70,80],
+  fee:[0,0,0,0,0,0,0],edu:[300,300,300,300,300,300,300],dep:[100,100,100,100,100,100,100],int:[2000,2700,3600,4500,5400,6300,7200],
+  sign:[650,900,1000,1100,1200,1300,1400],kit:[500,1950,2550,3200,3850,4500,5100],hq:[100,110,160,210,250,295,340],etc:[200,230,240,250,260,300,310],
+  tot:[3850,6290,7950,9660,11360,13095,14750]},
+ {id:"FB",name:"펀비어킹",roy:"로열티 3.3%",py:[20,30,40,50,60,70,80],
+  fee:[500,500,500,500,500,500,500],edu:[300,300,300,300,300,300,300],dep:[100,100,100,100,100,100,100],int:[2000,2700,3600,4500,5400,6300,7200],
+  sign:[500,800,900,1100,1200,1300,1400],kit:[600,800,900,1000,1200,1350,1500],hq:[170,180,190,200,210,220,230],etc:[200,230,240,250,260,300,310],
+  tot:[4370,5610,6730,7950,9170,10370,11540]},
+ {id:"JC",name:"족슐랭",roy:"로열티 3.3% (30호점까지 1.1%)",py:[20,30,40,50,60,70,80],
+  fee:[0,0,0,0,0,0,0],edu:[300,300,300,300,300,300,300],dep:[100,100,100,100,100,100,100],int:[2000,2700,3600,4500,5400,6300,7200],
+  sign:[700,900,1000,1100,1200,1300,1400],kit:[500,800,900,1000,1100,1200,1300],hq:[150,200,220,240,260,280,300],etc:[200,230,240,250,260,300,310],
+  tot:[3950,5230,6360,7490,8620,9780,10910]},
+ {id:"PD",name:"팔뚝집",roy:"로열티 3.3% (30호점까지 1.1%)",py:[10,15,20,25,30,40,50],
+  fee:[0,0,0,0,0,0,0],edu:[300,300,300,300,300,300,300],dep:[100,100,100,100,100,100,100],int:[1500,1500,2000,2500,3000,4000,5000],
+  sign:[820,870,940,990,1070,1170,1250],kit:[780,1000,1200,1500,1750,2100,2500],hq:[0,0,0,0,0,0,0],etc:[0,0,0,0,0,0,0],
+  tot:[3500,3770,4540,5390,6220,7670,9150],labels:{sign:"간판 및 집기"},hide:["hq","etc"]},
+ {id:"ST",name:"솥탐",roy:"로열티 1.1%",py:[30,40,50,60,70,80,90],
+  fee:[0,0,0,0,0,0,0],edu:[300,300,300,300,300,300,300],dep:[100,100,100,100,100,100,100],int:[2700,3600,4500,5400,6300,7200,8100],
+  sign:[600,700,800,900,1000,1100,1200],kit:[590,720,780,900,980,1070,1200],hq:[750,900,1050,1200,1300,1600,1700],etc:[200,230,240,250,300,310,320],
+  tot:[5240,6550,7770,9050,10280,11680,12920]},
+ {id:"TC",name:"투홀릭",roy:"로열티 2.2% (30호점까지 1.1%)",py:[20,30,40,50,60,70,80],
+  fee:[0,0,0,0,0,0,0],edu:[300,300,300,300,300,300,300],dep:[100,100,100,100,100,100,100],int:[2000,2700,3600,4500,5400,6300,7200],
+  sign:[600,700,800,900,1000,1100,1200],kit:[500,550,600,650,700,750,800],hq:[150,200,220,240,260,280,300],etc:[200,230,240,250,260,300,310],
+  tot:[3850,4780,5860,6940,8020,9130,10210]}
+];
+// 표기 순서: 투홀릭 다음에 천통, 빨강다람쥐
+const ORDER=["FB","JC","PD","ST","TC","CT","BD"];
+BRANDS.sort((a,b)=>ORDER.indexOf(a.id)-ORDER.indexOf(b.id));
+const NOTES={
+ fee:"전액면제 브랜드 다수 (펀비어킹 500만원)",edu:"",dep:"한시적 면제 (50% 부분공사)",int:"주방 재사용 / 필수: 도장·조명",
+ sign:"",kit:"주방기기 재사용 기준",hq:"",etc:"포스·의탁자 재사용 기준"
+};
+
+const off=new Set();           // 제외된 항목 key (전체 브랜드 공통 적용)
+let cur="ALL";
+const fmt=n=>n.toLocaleString("ko-KR");
+const won=v=>v===0?"-":fmt(v);
+const eok=v=>(v/10000).toFixed(2).replace(/\.?0+$/,"")+"억";
+
+function itemsOf(b){return ITEMS.filter(([k])=>!(b.hide||[]).includes(k)).map(([k,l])=>[k,(b.labels&&b.labels[k])||l]);}
+function sumAt(b,i){return itemsOf(b).reduce((s,[k])=>off.has(k)?s:s+b[k][i],0);}
+function origAt(b,i){return itemsOf(b).reduce((s,[k])=>s+b[k][i],0);}
+
+function renderTabs(){
+  const t=document.getElementById("tabs");
+  t.innerHTML=[{id:"ALL",name:"전체 비교"},...BRANDS].map(b=>`<button class="tab ${b.id===cur?"on":""}" data-id="${b.id}">${b.name}</button>`).join("");
+  t.querySelectorAll(".tab").forEach(e=>e.onclick=()=>{cur=e.dataset.id;render();});
+}
+
+function brandView(b){
+  const its=itemsOf(b);
+  const head=`<tr><th>구분</th>${b.py.map(p=>`<th>${p}PY</th>`).join("")}<th class="note">특이사항</th><th>조건 변경</th></tr>`;
+  const rows=its.map(([k,l])=>{
+    const o=off.has(k);
+    const fee=k==="fee"&&b.fee.every(v=>v===0);
+    return `<tr class="${o?"off":""}"><td>${l}</td>${b[k].map(v=>`<td>${k==="fee"&&v===0?"전액면제":won(v)}</td>`).join("")}<td class="note">${NOTES[k]||""}</td><td class="x"><button class="xbtn" data-k="${k}" title="${o?"조건 복원":"조건 변경"}">${o?"↺":"✕"}</button></td></tr>`;
+  }).join("");
+  const sums=b.py.map((_,i)=>sumAt(b,i));
+  const sumRow=`<tr class="sum"><td>합계</td>${sums.map(v=>`<td>${fmt(v)}</td>`).join("")}<td class="note">${off.size?"제외 항목 반영됨":"전체 항목 합산"}</td><td></td></tr>`;
+  const origRow=`<tr class="chk"><td>PDF 원본 합계</td>${b.tot.map(v=>`<td>${fmt(v)}</td>`).join("")}<td class="note"></td><td></td></tr>`;
+  const diffRow=`<tr class="chk"><td>검산 (전체 항목 합 − 원본)</td>${b.py.map((_,i)=>{const d=origAt(b,i)-b.tot[i];return `<td class="${d===0?"good":"bad"}">${d===0?"✔ 일치":fmt(d)}</td>`}).join("")}<td class="note"></td><td></td></tr>`;
+  const cut=off.size?`<tr class="chk"><td>제외로 감소한 금액</td>${b.py.map((_,i)=>`<td>${fmt(b.tot[i]-sums[i])}</td>`).join("")}<td class="note"></td><td></td></tr>`:"";
+  return `<div class="card">
+    <div class="bar"><h2>${b.name}<span class="chip">${b.roy}</span></h2><button class="reset" id="reset">전체 복원</button></div>
+    <table><thead>${head}</thead><tbody>${rows}${sumRow}${origRow}${diffRow}${cut}</tbody></table>
+    <div class="foot">
+      <p>합계 = ${its.map(([,l])=>l).join(" + ")}</p>
+      <p>별도사항: 외장, 철거, PDP, 가스, 전기 및 가스 증설, 덕트입상, 소방공사 / 냉난방기, 화장실, 어닝, 테라스, 인터넷, CCTV 등</p>
+      <p>본 견적은 이해를 돕기 위한 것으로 점포 구조나 재사용 가능 물품에 따라 편차가 있습니다.</p>
+    </div></div>`;
+}
+
+function allView(){
+  const tag=off.size?`<span class="chip">제외: ${[...off].map(k=>ITEMS.find(x=>x[0]===k)[1]).join(", ")}</span>`:"";
+  return `<div class="bar"><h2>브랜드별 평형별 합계 ${tag}</h2><button class="reset" id="reset">전체 복원</button></div>
+   <p class="desc">제외한 비용 항목은 모든 브랜드에 동일하게 적용됩니다. 상세 항목은 각 브랜드 탭에서 확인하세요.</p>
+   <div class="cmp">${BRANDS.map(b=>`<div class="card"><h3>${b.name}<span class="chip">${b.roy.split(" ")[0]} ${b.roy.split(" ")[1]||""}</span></h3>
+     <table><thead><tr><th>평형</th><th>투자금액(만원)</th><th>억 환산</th></tr></thead><tbody>
+     ${b.py.map((p,i)=>{const s=sumAt(b,i);return `<tr><td>${p}PY</td><td>${fmt(s)}</td><td>${eok(s)}</td></tr>`}).join("")}
+     </tbody></table></div>`).join("")}</div>
+   <div class="foot"><p>※ 로열티는 투자금액에 포함되지 않은 별도 비용입니다.</p></div>`;
+}
+
+function render(){
+  renderTabs();
+  const v=document.getElementById("view");
+  v.innerHTML=cur==="ALL"?allView():brandView(BRANDS.find(b=>b.id===cur));
+  v.querySelectorAll(".xbtn").forEach(e=>e.onclick=()=>{const k=e.dataset.k;off.has(k)?off.delete(k):off.add(k);render();});
+  const r=document.getElementById("reset"); if(r) r.onclick=()=>{off.clear();render();};
+}
+render();
+</script>
+</body>
+</html>
